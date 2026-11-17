@@ -30,10 +30,20 @@ async function waitFor(fn, timeout = 8000, step = 100) {
   return fn();
 }
 
+// app.exit() bypasses before-quit (PTY kill / hotkey unregister / media-IPC stop),
+// leaving child processes alive and the scheduled task stuck in Running state.
+// Quit through the normal cleanup path, with a hard backstop.
+function finish(code, windows) {
+  app.exitCode = code;
+  try { if (windows) windows.setQuitting(true); } catch { /* best effort */ }
+  app.quit();
+  setTimeout(() => process.exit(code), 4000);
+}
+
 setTimeout(() => {
   console.log('[smoke] TIMEOUT');
   fs.writeFileSync(path.join(OUT, 'results.json'), JSON.stringify(results, null, 2));
-  app.exit(2);
+  finish(2);
 }, 90000);
 
 bootstrap({
@@ -45,10 +55,12 @@ bootstrap({
         `${s.profiles.length} profiles, ${s.schemes.length} schemes`);
       // In session 0 (services) no global hotkey can register — probe a neutral
       // combo to tell an environment limitation apart from a real conflict.
+      // Never probe a Win-key combo: those are OS-reserved and fail even in a
+      // fully interactive session, which would fake a "non-interactive" verdict.
       let probeOk = false;
       try {
-        probeOk = globalShortcut.register('Super+F1', () => {});
-        if (probeOk) globalShortcut.unregister('Super+F1');
+        probeOk = globalShortcut.register('Ctrl+Alt+Shift+F12', () => {});
+        if (probeOk) globalShortcut.unregister('Ctrl+Alt+Shift+F12');
       } catch { /* non-interactive session */ }
       if (probeOk) {
         check('hotkey.rightshell', !!hotkeyStatus.rightshell?.ok, JSON.stringify(hotkeyStatus.rightshell));
@@ -222,13 +234,11 @@ bootstrap({
       const failed = results.filter((r) => !r.ok);
       fs.writeFileSync(path.join(OUT, 'results.json'), JSON.stringify(results, null, 2));
       console.log(`[smoke] ${results.length - failed.length}/${results.length} checks passed`);
-      app.exit(failed.length ? 1 : 0);
-      setTimeout(() => process.exit(failed.length ? 1 : 0), 3000);
+      finish(failed.length ? 1 : 0, windows);
     } catch (err) {
       console.error('[smoke] ERROR', err);
       fs.writeFileSync(path.join(OUT, 'results.json'), JSON.stringify(results, null, 2));
-      app.exit(2);
-      setTimeout(() => process.exit(2), 3000);
+      finish(2, windows);
     }
   },
 });

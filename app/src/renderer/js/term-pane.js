@@ -108,11 +108,15 @@ class TermPane {
       this.term.registerLinkProvider(this._pathProvider);
     }
 
-    this._resizeObserver = new ResizeObserver(() => this.scheduleFit());
+    this._resizeObserver = new ResizeObserver(() => { this.ensureSpawned(); this.scheduleFit(); });
     this._resizeObserver.observe(this.el);
 
     this._unsubs = [];
-    this._spawn();
+    this._spawned = false;
+    // Spawn only once mounted: fit() on a detached element yields 0×0 and the
+    // terminal never renders (quake blank-screen defect). The ResizeObserver
+    // drives the first real-size fit synchronously right after appendChild.
+    if (this.el.isConnected) this._spawn();
   }
 
   _scheme() {
@@ -130,6 +134,7 @@ class TermPane {
   }
 
   async _spawn() {
+    this._spawned = true;
     this.fitAddon.fit();
     const { cols, rows } = this.term;
     try {
@@ -146,6 +151,11 @@ class TermPane {
     } catch (err) {
       this.term.write(`\x1b[31m无法启动会话: ${err.message}\x1b[0m\r\n`);
     }
+  }
+
+  ensureSpawned() {
+    if (this._spawned || !this.el.isConnected) return;
+    if (this.el.clientWidth > 0 && this.el.clientHeight > 0) this._spawn();
   }
 
   scheduleFit() {
