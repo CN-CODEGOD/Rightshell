@@ -155,7 +155,19 @@ class TermPane {
 
   ensureSpawned() {
     if (this._spawned || !this.el.isConnected) return;
-    if (this.el.clientWidth > 0 && this.el.clientHeight > 0) this._spawn();
+    if (this.el.clientWidth > 0 && this.el.clientHeight > 0) { this._spawn(); return; }
+    // The 0×0→sized transition can be coalesced away (hidden→show + bounds
+    // animation + software rendering); without a retry the pane never spawns.
+    if (!this._spawnRetry) {
+      this._spawnRetry = setInterval(() => {
+        if (this._spawned || !this.el.isConnected) {
+          clearInterval(this._spawnRetry); this._spawnRetry = null; return;
+        }
+        if (this.el.clientWidth > 0 && this.el.clientHeight > 0) {
+          clearInterval(this._spawnRetry); this._spawnRetry = null; this._spawn();
+        }
+      }, 50);
+    }
   }
 
   scheduleFit() {
@@ -208,6 +220,7 @@ class TermPane {
   dispose() {
     this._resizeObserver.disconnect();
     cancelAnimationFrame(this._fitRaf);
+    if (this._spawnRetry) { clearInterval(this._spawnRetry); this._spawnRetry = null; }
     for (const u of this._unsubs) u();
     if (this.sessionId) rs.pty.kill(this.sessionId);
     this.term.dispose();

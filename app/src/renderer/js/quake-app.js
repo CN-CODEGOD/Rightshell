@@ -98,6 +98,7 @@ async function init() {
   rs.settings.onChange(onSettingsChanged);
   rs.quake.onState((s) => {
     if (s.visible && pane) {
+      pane.ensureSpawned();
       pane.scheduleFit();
       setTimeout(() => pane.term.focus(), 60);
     }

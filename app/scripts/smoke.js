@@ -32,12 +32,18 @@ async function waitFor(fn, timeout = 8000, step = 100) {
 
 // app.exit() bypasses before-quit (PTY kill / hotkey unregister / media-IPC stop),
 // leaving child processes alive and the scheduled task stuck in Running state.
-// Quit through the normal cleanup path, with a hard backstop.
+// Do the cleanup explicitly, arm the hard backstop BEFORE app.quit() (quit can
+// block synchronously and starve any timer scheduled after it), then quit.
 function finish(code, windows) {
   app.exitCode = code;
-  try { if (windows) windows.setQuitting(true); } catch { /* best effort */ }
-  app.quit();
   setTimeout(() => process.exit(code), 4000);
+  try {
+    if (windows) windows.setQuitting(true);
+    require('../src/main/pty').killAll();
+    require('../src/main/hotkeys').unregisterAll();
+    require('../src/main/media-ipc').stop();
+  } catch { /* best effort */ }
+  app.quit();
 }
 
 setTimeout(() => {
