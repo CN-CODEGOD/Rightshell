@@ -1,0 +1,15 @@
+# Dependencies & build output
+app/node_modules/
+app/dist/
+app/.smoke/
+
+# Third-party reference material (not part of RightShell source)
+terminal-core/
+terminal-core-temp/
+Microsoft.WindowsTerminal_*/
+
+# OS / editor noise
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.log

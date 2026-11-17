@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; style-src 'self' 'unsafe-inline' file:; img-src 'self' file: data:; media-src 'self' file:; font-src 'self' file:; script-src 'self' file: 'wasm-unsafe-eval'" />
+  <title>RightShell</title>
+  <link rel="stylesheet" href="vendor/xterm.css" />
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="css/settings.css" />
+</head>
+<body data-theme="dark">
+  <div id="titlebar">
+    <div id="app-icon"></div>
+    <div id="app-title">RightShell</div>
+    <div id="titlebar-actions">
+      <button id="btn-media" class="tb-btn" title="媒体播放器 (Ctrl+Alt+M)">♫</button>
+      <button id="btn-palette" class="tb-btn" title="命令面板 (Ctrl+Shift+P)">⌘</button>
+      <button id="btn-settings" class="tb-btn" title="设置 (Ctrl+,)">⚙</button>
+      <span class="tb-sep"></span>
+      <button id="btn-min" class="tb-btn caption" title="最小化">─</button>
+      <button id="btn-max" class="tb-btn caption" title="最大化">□</button>
+      <button id="btn-close" class="tb-btn caption close" title="关闭">×</button>
+    </div>
+  </div>
+
+  <div id="tabbar">
+    <div id="tabs"></div>
+    <button id="btn-new-tab" class="tabbar-btn" title="新建标签页 (Ctrl+Shift+T)">+</button>
+    <button id="btn-new-tab-dropdown" class="tabbar-btn" title="选择配置文件">▾</button>
+  </div>
+
+  <div id="main-row">
+    <div id="workspace"></div>
+
+    <aside id="media-panel" class="hidden">
+      <div id="media-header">
+        <span id="media-heading">媒体播放器</span>
+        <span id="media-badge"></span>
+        <span class="media-spacer"></span>
+        <button id="media-close" class="tb-btn" title="收起面板">×</button>
+      </div>
+      <div id="media-stage">
+        <video id="media-video" playsinline></video>
+        <img id="media-image" class="hidden" alt="media preview" />
+        <div id="media-cover" class="hidden">
+          <div class="eq"><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+      <div id="media-title">未在播放</div>
+      <div id="media-transport">
+        <button id="media-prev" class="media-btn" title="上一曲">⏮</button>
+        <button id="media-play" class="media-btn primary" title="播放/暂停">▶</button>
+        <button id="media-next" class="media-btn" title="下一曲">⏭</button>
+        <button id="media-shuffle" class="media-btn toggle" title="随机播放">🔀</button>
+        <button id="media-loop" class="media-btn toggle" title="单曲循环">🔁</button>
+      </div>
+      <div id="media-seekrow">
+        <input id="media-seek" type="range" min="0" max="1000" value="0" />
+        <span id="media-time">0:00 / 0:00</span>
+      </div>
+      <div id="media-volumerow">
+        <button id="media-mute" class="media-btn" title="静音">🔊</button>
+        <input id="media-volume" type="range" min="0" max="100" value="80" />
+        <select id="media-rate" class="media-rate" title="播放速度">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="1.25">1.25×</option>
+          <option value="1.5">1.5×</option>
+          <option value="2">2×</option>
+        </select>
+      </div>
+      <div id="media-playlist-head">
+        <span>播放列表</span>
+        <button id="media-clear" class="media-btn small" title="清空列表">清空</button>
+      </div>
+      <div id="media-list"></div>
+      <div id="media-empty">
+        列表为空。<br />在终端里运行 <code>rsctl play "文件路径"</code><br />或把文件路径粘贴到此面板。
+      </div>
+    </aside>
+  </div>
+
+  <div id="statusbar"><span id="status"></span></div>
+
+  <div id="settings-overlay" class="hidden">
+    <div id="layout">
+      <nav id="sidebar">
+        <div id="sidebar-header">
+          <div id="sidebar-logo"></div>
+          <div>
+            <div id="sidebar-title">RightShell</div>
+            <div id="sidebar-sub">设置</div>
+          </div>
+          <button id="settings-close" class="tb-btn" title="关闭设置 (Esc)">×</button>
+        </div>
+        <div class="nav-item" data-page="general">常规</div>
+        <div class="nav-item" data-page="summon">召唤快捷键</div>
+        <div class="nav-item" data-page="profiles">配置文件</div>
+        <div class="nav-item" data-page="schemes">配色方案</div>
+        <div class="nav-item" data-page="keybindings">动作与快捷键</div>
+        <div class="nav-item" data-page="quake">myShell (Quake)</div>
+        <div class="nav-item" data-page="appearance">外观</div>
+        <div class="nav-item" data-page="about">关于</div>
+      </nav>
+      <main id="settings-content"></main>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+
+  <script src="vendor/xterm.js"></script>
+  <script src="vendor/addon-fit.js"></script>
+  <script src="vendor/addon-search.js"></script>
+  <script src="vendor/addon-web-links.js"></script>
+  <script src="vendor/addon-unicode11.js"></script>
+  <script src="vendor/addon-image.js"></script>
+  <script src="../shared/chords.js"></script>
+  <script src="js/path-links.js"></script>
+  <script src="js/term-pane.js"></script>
+  <script src="js/split-tree.js"></script>
+  <script src="js/media-player.js"></script>
+  <script src="js/settings-ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

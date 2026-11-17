@@ -1,0 +1,54 @@
+{
+  "name": "rightshell",
+  "productName": "RightShell",
+  "version": "0.1.0",
+  "description": "RightShell & myShell - dual-mode Windows terminal client",
+  "main": "src/main/main.js",
+  "author": "RightShell",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "start:quake": "electron . --client=myshell",
+    "import:wt": "node scripts/import-wt-defaults.js",
+    "postinstall": "node scripts/copy-vendor.js",
+    "smoke": "electron scripts/smoke.js",
+    "dist": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.rightshell.app",
+    "productName": "RightShell",
+    "directories": {
+      "output": "dist"
+    },
+    "npmRebuild": false,
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/@homebridge/**"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "assets/icon.png"
+    },
+    "portable": {
+      "artifactName": "RightShell-${version}-portable.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.3.1",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "@homebridge/node-pty-prebuilt-multiarch": "^0.15.0",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-image": "^0.8.0",
+    "@xterm/addon-search": "^0.15.0",
+    "@xterm/addon-unicode11": "^0.8.0",
+    "@xterm/addon-web-links": "^0.11.0",
+    "@xterm/xterm": "^5.5.0",
+    "koffi": "^3.3.8"
+  }
+}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; style-src 'self' 'unsafe-inline' file:; img-src 'self' file: data:; font-src 'self' file:; script-src 'self' file:" />
+  <title>RightShell 设置</title>
+  <link rel="stylesheet" href="css/settings.css" />
+</head>
+<body data-theme="dark">
+  <div id="layout">
+    <nav id="sidebar">
+      <div id="sidebar-header">
+        <div id="sidebar-logo"></div>
+        <div>
+          <div id="sidebar-title">RightShell</div>
+          <div id="sidebar-sub">设置</div>
+        </div>
+      </div>
+      <div class="nav-item" data-page="general">常规</div>
+      <div class="nav-item" data-page="summon">召唤快捷键</div>
+      <div class="nav-item" data-page="profiles">配置文件</div>
+      <div class="nav-item" data-page="schemes">配色方案</div>
+      <div class="nav-item" data-page="keybindings">动作与快捷键</div>
+      <div class="nav-item" data-page="quake">myShell (Quake)</div>
+      <div class="nav-item" data-page="appearance">外观</div>
+      <div class="nav-item" data-page="about">关于</div>
+    </nav>
+    <main id="content"></main>
+  </div>
+  <script src="../shared/chords.js"></script>
+  <script src="js/settings-ui.js"></script>
+</body>
+</html>
