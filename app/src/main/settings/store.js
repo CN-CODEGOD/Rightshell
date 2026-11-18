@@ -69,7 +69,7 @@ function defaults() {
       clickablePaths: true,
     },
     summon: {
-      rightshell: 'win+backquote',
+      rightshell: 'ctrl+alt+backquote',
       myshell: 'ctrl+backquote',
     },
     quake: {
