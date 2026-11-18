@@ -57,7 +57,12 @@ function buildTray() {
 // all windows closed (matrix A/B 4/4 HANG). Release them explicitly.
 // Exported because process.exit() bypasses before-quit: smoke's finish() must
 // call this itself or it hangs the same way (matrix d1 FORCE-KILL evidence).
+let handlesReleased = false;
 function releaseHandles() {
+  // Idempotent: smoke's finish() releases before app.quit(), then before-quit
+  // fires again — a second pty.killAll over dead PTYs can block synchronously.
+  if (handlesReleased) return;
+  handlesReleased = true;
   hotkeys.unregisterAll();
   pty.killAll();
   mediaIpc.stop();
@@ -85,11 +90,16 @@ function bootstrap(opts = {}) {
   });
 
   app.on('before-quit', () => {
+    console.log('[main] before-quit enter');
     windows.setQuitting(true);
     releaseHandles();
+    console.log('[main] before-quit released');
     // Backstop if native drain still blocks: app.exit terminates immediately.
     // unref() so the timer itself never keeps the loop alive.
     setTimeout(() => app.exit(0), 3000).unref();
+  });
+  app.on('will-quit', () => {
+    console.log('[main] will-quit reached');
   });
 
   app.whenReady().then(() => {
