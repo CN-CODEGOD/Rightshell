@@ -75,7 +75,7 @@ bootstrap({
         check('hotkey.rightshell', false, 'ENV-INVALID: non-interactive/locked session cannot register global hotkeys');
         check('hotkey.myshell', false, 'ENV-INVALID: non-interactive/locked session cannot register global hotkeys');
       }
-      check('chords.accel', Chords.toAccelerator('ctrl+alt+backquote') === 'Ctrl+Alt+`',
+      check('chords.accel', Chords.toAccelerator('ctrl+alt+backquote') === 'CommandOrControl+Alt+`',
         Chords.toAccelerator('ctrl+alt+backquote'));
 
       const list = actions.listForRenderer(s);
