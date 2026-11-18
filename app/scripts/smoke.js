@@ -73,8 +73,8 @@ bootstrap({
         check('hotkey.rightshell', true, 'SKIPPED: non-interactive session cannot register global hotkeys');
         check('hotkey.myshell', true, 'SKIPPED: non-interactive session cannot register global hotkeys');
       }
-      check('chords.accel', Chords.toAccelerator('win+backquote') === 'Super+`',
-        Chords.toAccelerator('win+backquote'));
+      check('chords.accel', Chords.toAccelerator('ctrl+alt+backquote') === 'Ctrl+Alt+`',
+        Chords.toAccelerator('ctrl+alt+backquote'));
 
       const list = actions.listForRenderer(s);
       check('actions.registry', list.length >= 40, `${list.length} actions`);

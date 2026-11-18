@@ -1,4 +1,4 @@
-// Global summon hotkeys: Win+` -> RightShell, Ctrl+` -> myShell (defaults,
+// Global summon hotkeys: Ctrl+Alt+` -> RightShell, Ctrl+` -> myShell (defaults,
 // rebindable in the settings UI). Registered process-wide via globalShortcut.
 const { globalShortcut } = require('electron');
 const Chords = require('../shared/chords');
