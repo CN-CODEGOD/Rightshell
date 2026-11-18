@@ -3,7 +3,7 @@
   "productName": "RightShell",
   "version": "0.1.0",
   "description": "RightShell & myShell - dual-mode Windows terminal client",
-  "main": "src/main/main.js",
+  "main": "src/main/entry.js",
   "author": "RightShell",
   "license": "MIT",
   "scripts": {
