@@ -70,8 +70,10 @@ bootstrap({
         check('hotkey.rightshell', !!hotkeyStatus.rightshell?.ok, JSON.stringify(hotkeyStatus.rightshell));
         check('hotkey.myshell', !!hotkeyStatus.myshell?.ok, JSON.stringify(hotkeyStatus.myshell));
       } else {
-        check('hotkey.rightshell', true, 'SKIPPED: non-interactive session cannot register global hotkeys');
-        check('hotkey.myshell', true, 'SKIPPED: non-interactive session cannot register global hotkeys');
+        // Never fake-green: an environment that cannot register hotkeys (session 0
+        // or locked workstation) makes the run INVALID evidence, not a pass.
+        check('hotkey.rightshell', false, 'ENV-INVALID: non-interactive/locked session cannot register global hotkeys');
+        check('hotkey.myshell', false, 'ENV-INVALID: non-interactive/locked session cannot register global hotkeys');
       }
       check('chords.accel', Chords.toAccelerator('ctrl+alt+backquote') === 'Ctrl+Alt+`',
         Chords.toAccelerator('ctrl+alt+backquote'));
