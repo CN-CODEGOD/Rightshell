@@ -35,29 +35,13 @@ async function waitFor(fn, timeout = 8000, step = 100) {
 // Do the cleanup explicitly, then exit synchronously — a smoke test must
 // always terminate; graceful shutdown is secondary.
 function finish(code, windows) {
-  try {
-    if (windows) {
-      windows.setQuitting(true);
-      // process.exit() with live BrowserWindows hangs on Windows (UI thread
-      // message loop); app.quit() closes them as part of its chain, we must too.
-      for (const w of [...windows.rightshellWindows]) {
-        if (!w.isDestroyed()) w.destroy();
-      }
-      if (windows.quakeWindow && !windows.quakeWindow.isDestroyed()) windows.quakeWindow.destroy();
-    }
-    console.log('[smoke] finish: windows destroyed');
-    // process.exit() bypasses before-quit, so release resident handles here
-    // explicitly (D1-APP: tray/ipc/keep-alive sockets otherwise block drain).
-    require('../src/main/main').releaseHandles();
-    console.log('[smoke] finish: handles released');
-  } catch (e) {
-    console.log('[smoke] finish: cleanup error ' + (e && e.message));
-  }
-  // On Windows Electron, exit()/app.exit() from a UI-thread callback deadlocks
-  // (static destructors join threads that need the message loop); app.quit()
-  // shuts down via the loop and is proven clean (matrix A/B 5/5). Handles are
-  // released above so quit drains; process.exitCode carries the honest code.
-  console.log('[smoke] finish: calling app.quit() with exitCode=' + code);
+  // Mirror the proven-clean user quit path exactly (matrix A 5/5): setQuitting
+  // + app.quit(); the quit chain closes windows (close semantics — manual
+  // destroy orphaned renderers on Windows Electron 45) and before-quit releases
+  // handles once. exit()/app.exit() from UI-thread callbacks deadlock; manual
+  // window.destroy() and pre-release both reproduced the post-will-quit hang.
+  console.log('[smoke] finish: app.quit() with exitCode=' + code);
+  if (windows) windows.setQuitting(true);
   process.exitCode = code;
   app.quit();
 }
