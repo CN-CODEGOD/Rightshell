@@ -37,9 +37,9 @@ async function waitFor(fn, timeout = 8000, step = 100) {
 function finish(code, windows) {
   try {
     if (windows) windows.setQuitting(true);
-    require('../src/main/pty').killAll();
-    require('../src/main/hotkeys').unregisterAll();
-    require('../src/main/media-ipc').stop();
+    // process.exit() bypasses before-quit, so release resident handles here
+    // explicitly (D1-APP: tray/ipc/keep-alive sockets otherwise block drain).
+    require('../src/main/main').releaseHandles();
   } catch { /* best effort */ }
   process.exit(code);
 }

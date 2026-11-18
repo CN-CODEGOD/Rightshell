@@ -52,6 +52,22 @@ function buildTray() {
   tray.on('double-click', () => windows.summonRightShell());
 }
 
+// D1-APP fix: resident native handles (tray icon, ipc channels, keep-alive
+// sockets) kept the loop from draining — app.quit()/process.exit() hung with
+// all windows closed (matrix A/B 4/4 HANG). Release them explicitly.
+// Exported because process.exit() bypasses before-quit: smoke's finish() must
+// call this itself or it hangs the same way (matrix d1 FORCE-KILL evidence).
+function releaseHandles() {
+  hotkeys.unregisterAll();
+  pty.killAll();
+  mediaIpc.stop();
+  ipc.unregister();
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
+}
+
 function bootstrap(opts = {}) {
   if (!app.requestSingleInstanceLock()) {
     app.quit();
@@ -70,17 +86,7 @@ function bootstrap(opts = {}) {
 
   app.on('before-quit', () => {
     windows.setQuitting(true);
-    hotkeys.unregisterAll();
-    pty.killAll();
-    mediaIpc.stop();
-    ipc.unregister();
-    // D1-APP fix: resident native handles (tray icon, ipc channels, keep-alive
-    // sockets) kept the loop from draining — app.quit()/process.exit() hung with
-    // all windows closed (matrix A/B 4/4 HANG). Release them explicitly.
-    if (tray) {
-      tray.destroy();
-      tray = null;
-    }
+    releaseHandles();
     // Backstop if native drain still blocks: app.exit terminates immediately.
     // unref() so the timer itself never keeps the loop alive.
     setTimeout(() => app.exit(0), 3000).unref();
@@ -109,4 +115,4 @@ if (require.main === module) {
   bootstrap();
 }
 
-module.exports = { bootstrap };
+module.exports = { bootstrap, releaseHandles };
