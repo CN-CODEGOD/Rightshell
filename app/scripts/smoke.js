@@ -53,10 +53,13 @@ function finish(code, windows) {
   } catch (e) {
     console.log('[smoke] finish: cleanup error ' + (e && e.message));
   }
-  // app.exit = Electron native immediate exit with code; skips before-quit
-  // (cleanup above is explicit) and avoids the process.exit drain hang.
-  console.log('[smoke] finish: calling app.exit(' + code + ')');
-  app.exit(code);
+  // On Windows Electron, exit()/app.exit() from a UI-thread callback deadlocks
+  // (static destructors join threads that need the message loop); app.quit()
+  // shuts down via the loop and is proven clean (matrix A/B 5/5). Handles are
+  // released above so quit drains; process.exitCode carries the honest code.
+  console.log('[smoke] finish: calling app.quit() with exitCode=' + code);
+  process.exitCode = code;
+  app.quit();
 }
 
 setTimeout(() => {
