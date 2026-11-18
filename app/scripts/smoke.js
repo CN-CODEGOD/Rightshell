@@ -45,11 +45,18 @@ function finish(code, windows) {
       }
       if (windows.quakeWindow && !windows.quakeWindow.isDestroyed()) windows.quakeWindow.destroy();
     }
+    console.log('[smoke] finish: windows destroyed');
     // process.exit() bypasses before-quit, so release resident handles here
     // explicitly (D1-APP: tray/ipc/keep-alive sockets otherwise block drain).
     require('../src/main/main').releaseHandles();
-  } catch { /* best effort */ }
-  process.exit(code);
+    console.log('[smoke] finish: handles released');
+  } catch (e) {
+    console.log('[smoke] finish: cleanup error ' + (e && e.message));
+  }
+  // app.exit = Electron native immediate exit with code; skips before-quit
+  // (cleanup above is explicit) and avoids the process.exit drain hang.
+  console.log('[smoke] finish: calling app.exit(' + code + ')');
+  app.exit(code);
 }
 
 setTimeout(() => {
