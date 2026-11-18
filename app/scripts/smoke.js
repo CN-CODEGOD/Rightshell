@@ -36,7 +36,15 @@ async function waitFor(fn, timeout = 8000, step = 100) {
 // always terminate; graceful shutdown is secondary.
 function finish(code, windows) {
   try {
-    if (windows) windows.setQuitting(true);
+    if (windows) {
+      windows.setQuitting(true);
+      // process.exit() with live BrowserWindows hangs on Windows (UI thread
+      // message loop); app.quit() closes them as part of its chain, we must too.
+      for (const w of [...windows.rightshellWindows]) {
+        if (!w.isDestroyed()) w.destroy();
+      }
+      if (windows.quakeWindow && !windows.quakeWindow.isDestroyed()) windows.quakeWindow.destroy();
+    }
     // process.exit() bypasses before-quit, so release resident handles here
     // explicitly (D1-APP: tray/ipc/keep-alive sockets otherwise block drain).
     require('../src/main/main').releaseHandles();
