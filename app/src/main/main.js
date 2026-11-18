@@ -73,6 +73,17 @@ function bootstrap(opts = {}) {
     hotkeys.unregisterAll();
     pty.killAll();
     mediaIpc.stop();
+    ipc.unregister();
+    // D1-APP fix: resident native handles (tray icon, ipc channels, keep-alive
+    // sockets) kept the loop from draining — app.quit()/process.exit() hung with
+    // all windows closed (matrix A/B 4/4 HANG). Release them explicitly.
+    if (tray) {
+      tray.destroy();
+      tray = null;
+    }
+    // Backstop if native drain still blocks: app.exit terminates immediately.
+    // unref() so the timer itself never keeps the loop alive.
+    setTimeout(() => app.exit(0), 3000).unref();
   });
 
   app.whenReady().then(() => {

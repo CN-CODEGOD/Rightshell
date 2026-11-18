@@ -19,41 +19,46 @@ function detectPwsh() {
   });
 }
 
+const handledChannels = [];
+const listenedChannels = [];
+
 function register() {
-  ipcMain.handle('settings:get', () => store.get());
-  ipcMain.handle('settings:set', (e, dotPath, value) => {
+  const handle = (ch, fn) => { handledChannels.push(ch); ipcMain.handle(ch, fn); };
+  const on = (ch, fn) => { listenedChannels.push(ch); ipcMain.on(ch, fn); };
+  handle('settings:get', () => store.get());
+  handle('settings:set', (e, dotPath, value) => {
     store.set(dotPath, value);
     return store.get();
   });
-  ipcMain.handle('settings:reset', () => {
+  handle('settings:reset', () => {
     store.reset();
     return store.get();
   });
-  ipcMain.handle('settings:open', () => {
+  handle('settings:open', () => {
     windows.openSettings();
   });
 
-  ipcMain.handle('actions:list', () => actions.listForRenderer(store.get()));
-  ipcMain.handle('actions:bindings', () => actions.resolveBindings(store.get().keybindings || {}));
+  handle('actions:list', () => actions.listForRenderer(store.get()));
+  handle('actions:bindings', () => actions.resolveBindings(store.get().keybindings || {}));
 
-  ipcMain.handle('pty:create', (e, opts) => pty.create(opts, e.sender));
-  ipcMain.on('pty:write', (e, id, data) => pty.write(id, data));
-  ipcMain.on('pty:resize', (e, id, cols, rows) => pty.resize(id, cols, rows));
-  ipcMain.on('pty:kill', (e, id) => pty.kill(id));
+  handle('pty:create', (e, opts) => pty.create(opts, e.sender));
+  on('pty:write', (e, id, data) => pty.write(id, data));
+  on('pty:resize', (e, id, cols, rows) => pty.resize(id, cols, rows));
+  on('pty:kill', (e, id) => pty.kill(id));
 
-  ipcMain.handle('clipboard:read', () => clipboard.readText());
-  ipcMain.handle('clipboard:write', (e, text) => clipboard.writeText(text));
+  handle('clipboard:read', () => clipboard.readText());
+  handle('clipboard:write', (e, text) => clipboard.writeText(text));
 
-  ipcMain.handle('window:action', (e, action) => {
+  handle('window:action', (e, action) => {
     const win = require('electron').BrowserWindow.fromWebContents(e.sender);
     if (win) windows.handleWindowAction(win, action);
   });
 
-  ipcMain.handle('quake:toggle', () => windows.toggleQuake());
-  ipcMain.handle('quake:hide', () => windows.hideQuake());
-  ipcMain.handle('rightshell:summon', () => windows.summonRightShell());
+  handle('quake:toggle', () => windows.toggleQuake());
+  handle('quake:hide', () => windows.hideQuake());
+  handle('rightshell:summon', () => windows.summonRightShell());
 
-  ipcMain.handle('dialog:openFile', async (e, opts) => {
+  handle('dialog:openFile', async (e, opts) => {
     const win = require('electron').BrowserWindow.fromWebContents(e.sender);
     const result = await dialog.showOpenDialog(win, {
       properties: ['openFile'],
@@ -62,20 +67,20 @@ function register() {
     return result.canceled ? null : result.filePaths[0];
   });
 
-  ipcMain.handle('shell:openExternal', (e, url) => {
+  handle('shell:openExternal', (e, url) => {
     if (/^https?:\/\//i.test(url)) shell.openExternal(url);
   });
 
-  ipcMain.handle('shell:openPath', async (e, p) => {
+  handle('shell:openPath', async (e, p) => {
     if (!p || typeof p !== 'string') return 'empty path';
     return shell.openPath(p);
   });
 
-  ipcMain.handle('shell:showItemInFolder', (e, p) => {
+  handle('shell:showItemInFolder', (e, p) => {
     if (p && typeof p === 'string') shell.showItemInFolder(p);
   });
 
-  ipcMain.handle('app:info', () => ({
+  handle('app:info', () => ({
     version: app.getVersion(),
     name: app.getName(),
     userData: app.getPath('userData'),
@@ -83,12 +88,12 @@ function register() {
     chrome: process.versions.chrome,
     node: process.versions.node,
   }));
-  ipcMain.handle('app:quit', () => {
+  handle('app:quit', () => {
     windows.setQuitting(true);
     app.quit();
   });
 
-  ipcMain.handle('profiles:detect', () => {
+  handle('profiles:detect', () => {
     detectPwsh();
   });
 
@@ -101,4 +106,15 @@ function register() {
   detectPwsh();
 }
 
-module.exports = { register };
+// D1-APP fix: release ipcMain handlers/listeners on quit so no resident
+// channel keeps the main process from draining.
+function unregister() {
+  for (const ch of handledChannels) {
+    try { ipcMain.removeHandler(ch); } catch { /* already removed */ }
+  }
+  handledChannels.length = 0;
+  for (const ch of listenedChannels) ipcMain.removeAllListeners(ch);
+  listenedChannels.length = 0;
+}
+
+module.exports = { register, unregister };

@@ -72,7 +72,12 @@ class MediaIpc {
   }
 
   stop() {
-    if (this.server) this.server.close();
+    if (this.server) {
+      // keep-alive sockets otherwise keep server.close() pending forever (D1-APP)
+      if (typeof this.server.closeAllConnections === 'function') this.server.closeAllConnections();
+      this.server.close();
+      this.server = null;
+    }
   }
 }
 
